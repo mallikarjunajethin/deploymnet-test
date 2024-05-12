@@ -1,0 +1,41 @@
+pipeline {
+  agent any
+  stages {
+    stage('Checkout') {
+       steps {
+        sh 'echo passed'
+        git branch: 'main', url: 'https://github.com/mallikarjunajethin/deploymnet-test.git'
+      }
+    }
+    stage('pull') {
+            steps {
+                // Log in to Docker Hub
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+                    sh "docker login -u ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}"
+                }
+                
+                // Push Docker image to Docker Hub
+                sh "docker pull mallikarjunajethin/maven-demo:${BUILD_NUMBER}"
+                
+                // Log out from Docker Hub
+                sh "docker logout"
+            }
+		}
+
+    stage('Run Docker Container') {
+            environment {
+                DOCKER_IMAGE = 'mallikarjunajethin/maven-demo:${BUILD_NUMBER}'
+                CONTAINER_NAME = 'maven-demo'
+                PORT_MAPPING = '80:80' // Example port mapping
+                }
+           steps {
+                script {
+                    // Run the Docker container
+                    sh "docker run -d --name ${CONTAINER_NAME} -p ${PORT_MAPPING} ${DOCKER_IMAGE}"
+                }
+            }
+
+        }
+	
+	}
+}
