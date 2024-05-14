@@ -15,7 +15,7 @@ pipeline {
                 }
                 
                 // Push Docker image to Docker Hub
-                sh "docker pull mallikarjunajethin/maven-demo:2"
+                sh "docker pull mallikarjunajethin/maven-demo:replaceImageTag"
                 
                 // Log out from Docker Hub
                 sh "docker logout"
@@ -24,7 +24,7 @@ pipeline {
 
     stage('Run Docker Container') {
             environment {
-                DOCKER_IMAGE = 'mallikarjunajethin/maven-demo:2'
+                DOCKER_IMAGE = 'mallikarjunajethin/maven-demo:replaceImageTag'
                 CONTAINER_NAME = 'maven-demo'
                 PORT_MAPPING = '80:80' // Example port mapping
                 }
