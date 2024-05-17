@@ -7,35 +7,40 @@ pipeline {
         git branch: 'main', url: 'https://github.com/mallikarjunajethin/deploymnet-test.git'
       }
     }
-    stage('pull') {
+    stage('Pull Docker Image') {
+            environment {
+			DOCKER_REGISTRY = 'mallikarjunajethin.jfrog.io/mallikarjunajethin-docker-local'
+			IMAGE_NAME = 'maven-demo-docker'
+			CREDENTIAL_ID = 'docker-hub-login'
+		        DOCKER_HUB_URL= 'https://mallikarjunajethin.jfrog.io/'
+               }
             steps {
-                // Log in to Docker Hub
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
-                    sh "docker login -u ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}"
+                script {
+                    // Login to the Docker registry using Jenkins credentials
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-login', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "docker login -u ${env.DOCKER_USERNAME} -p ${env.DOCKER_PASSWORD} ${env.DOCKER_HUB_URL}"
+                        // pull the Docker image to the registry
+                        sh "docker pull ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:13"
+                        }
+                    }
                 }
-                
-                // Push Docker image to Docker Hub
-                sh "docker pull mallikarjunajethin/maven-demo:replaceImageTag"
-                
-                // Log out from Docker Hub
-                sh "docker logout"
-            }
-		}
-
+	     } 
     stage('Run Docker Container') {
             environment {
-                DOCKER_IMAGE = 'mallikarjunajethin/maven-demo:replaceImageTag'
+		DOCKER_REGISTRY = 'mallikarjunajethin.jfrog.io/mallikarjunajethin-docker-local'
+		IMAGE_NAME = 'maven-demo-docker'
+		CREDENTIAL_ID = 'docker-hub-login'
                 CONTAINER_NAME = 'maven-demo'
-                PORT_MAPPING = '80:80' // Example port mapping
+                PORT_MAPPING = '8110:8180' // Example port mapping
                 }
            steps {
                 script {
                     // Run the Docker container
-                    sh "docker run -d --name ${CONTAINER_NAME} -p ${PORT_MAPPING} ${DOCKER_IMAGE}"
+                    sh "docker run -d --name ${CONTAINER_NAME} -p ${PORT_MAPPING} ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:13"
                 }
             }
 
         }
 	
-	}
+   }
 }
